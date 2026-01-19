@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ELIRA Unified</title>
+  <style>
+    body {
+      background-color: #0f111a;
+      color: #e0e0e0;
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+    h1, h2, h3 {
+      text-align: center;
+      color: #00ffd5;
+    }
+    textarea, input, select {
+      width: 100%;
+      padding: 10px;
+      background-color: #1c1f2a;
+      color: #fff;
+      border: none;
+      margin-bottom: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    textarea {
+      height: 180px;
+    }
+    .btns, .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0;
+      justify-content: center;
+    }
+    button {
+      background-color: #00ffd5;
+      color: #0f111a;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #00bfa6;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(10, 35px);
+      gap: 3px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+    .cell {
+      width: 35px;
+      height: 35px;
+      background-color: #272a36;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      color: #00ffd5;
+      border-radius: 5px;
+    }
+    .file-upload {
+      margin: 20px 0;
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .saved-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid #333;
+      word-break: break-all;
+    }
+    .saved-item span {
+      flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-right: 10px;
+    }
+    .saved-item .btn-group {
+      display: flex;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .progress-bar {
+      width: 100%;
+      background-color: #333;
+      margin-top: 10px;
+    }
+    .progress {
+      width: 0%;
+      height: 20px;
+      background-color: #00ffd5;
+      text-align: center;
+      color: #0f111a;
+      line-height: 20px;
+    }
+
+    #imageEliraPage {
+      background-color: #0f0f0f;
+      color: #00ffe0;
+      padding: 15px;
+    }
+    #imageEliraPage h1 {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+    #imageEliraPage input, #imageEliraPage button, #imageEliraPage textarea {
+      margin: 8px 0;
+      padding: 8px;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+    #imageEliraPage textarea {
+      height: 120px;
+    }
+    #imageEliraPage .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    #imageEliraPage #stats {
+      font-size: 0.8rem;
+      color: #888;
+    }
+    #imageEliraPage #imagePreview {
+      max-width: 100%;
+      max-height: 300px;
+      border: 2px solid #00ffe0;
+      margin-top: 10px;
+    }
+    .file-input-label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+      color: #00ffe0;
+    }
+    .save-all-btn {
+      margin-top: 15px;
+      background-color: #00bfff;
+    }
+    .info {
+      color: #888;
+      font-size: 0.9rem;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <button onclick="showPage('encryptionPage')">🔐 Text Encryption</button>
+    <button onclick="showPage('imageEliraPage')">🖼️ Image Encryption</button>
+    <button onclick="showPage('generatorPage')">🗝️ Key Generator</button>
+    <button onclick="showPage('savedKeysPage')">📂 Saved Keys</button>
+  </div>
+
+  <div class="container page active" id="encryptionPage">
+    <h1>ELIRA Text Encryption</h1>
+    <label>Keyword (Optional):</label>
+    <input id="keyword" type="text" placeholder="Defaults to standard grid if empty" />
+
+    <label>Input Text:</label>
+    <textarea id="input"></textarea>
+    <span id="inputCharCount">Characters: 0</span>
+    <div class="btns">
+      <button onclick="saveInput()">Save Input</button>
+      <button onclick="encrypt()">Encrypt</button>
+      <button onclick="copyText('input')">Copy</button>
+    </div>
+
+    <label>Output (Editable):</label>
+    <textarea id="output"></textarea>
+    <span id="outputCharCount">Characters: 0</span>
+    <div class="btns">
+      <button onclick="copyText('output')">Copy</button>
+      <button onclick="decrypt()">Decrypt</button>
+      <button onclick="saveOutput()">Save Output</button>
+    </div>
+
+    <div class="file-upload">
+      <label>Upload File:</label><br>
+      <input type="file" id="fileInput" accept=".txt" />
+      <div class="btns">
+        <button onclick="decryptUploaded()">Decrypt Uploaded</button>
+        <button onclick="encryptUploaded()">Encrypt Uploaded</button>
+      </div>
+      <div class="progress-bar">
+        <div class="progress" id="progressBar">0%</div>
+      </div>
+    </div>
+
+    <h3>Scrambled Grid</h3>
+    <div id="grid" class="grid"></div>
+  </div>
+
+  <div class="container page" id="imageEliraPage">
+    <h1>🔐 ELIRA Image Encryptor</h1>
+    <label class="file-input-label">Upload Image:</label>
+    <input type="file" id="fileInputImage" accept="image/*">
+    <label class="file-input-label">Upload Encrypted Text File:</label>
+    <input type="file" id="textFileInput" accept=".txt" onchange="loadTextFile()">
+    <input type="text" id="keywordInputImage" placeholder="Enter Keyword 🔑">
+    <div class="progress-bar">
+      <div class="progress" id="imageProgressBar">0%</div>
+    </div>
+    <div class="btn-row">
+      <button onclick="encryptImage()">Encrypt</button>
+      <button onclick="decryptImage()">Decrypt</button>
+      <button onclick="downloadText()">⬇ Download Encrypted</button>
+      <button onclick="downloadImage()">⬇ Download Decrypted Image</button>
+    </div>
+    <h3>📤 Encrypted or Input Text</h3>
+    <textarea id="outputImage" placeholder="Output will appear here OR paste encrypted text here for decryption."></textarea>
+    <div id="stats">Character Count: 0 | Image Size: N/A</div>
+    <h3>🖼️ Decrypted Image Preview</h3>
+    <img id="imagePreview" />
+  </div>
+
+  <div class="container page" id="generatorPage">
+    <h1>ELIRA Key Generator</h1>
+    <label>Choose Mode:</label>
+    <select id="mode">
+      <option value="number">Numbers Only</option>
+      <option value="word">Letters Only</option>
+      <option value="mix">Mix (A-Z, 0-9)</option>
+      <option value="fullMix">Mix (A-Z, a-z, 0-9, Special Chars)</option>
+    </select>
+    <label>Key Length:</label>
+    <input type="number" id="length" value="4" min="1" max="12"/>
+    <input type="checkbox" id="autoSaveKeys" checked>
+    <label for="autoSaveKeys">Auto-save generated keys</label>
+    <label>Seed:</label>
+    <input type="text" id="seed" placeholder="Enter seed keyword (optional)"/>
+    <div class="info" id="seedInfo"></div>
+    <label>Go to Keyword #:</label>
+    <input type="number" id="targetIndex" placeholder="e.g. 20 (optional)" min="1"/>
+    <div class="info" id="maxCombosInfo"></div>
+    <label>Save As (optional name):</label>
+    <input type="text" id="customName" placeholder="e.g. MasterKey or SecretPass" />
+    <div class="btns">
+      <button onclick="generateKey()">Generate Unique Key</button>
+      <button onclick="clearOutput()">Clear All</button>
+    </div>
+    <div class="progress-bar">
+      <div class="progress" id="keyGenProgressBar">0%</div>
+    </div>
+    <textarea id="outputKey" readonly style="height: 200px;"></textarea>
+  </div>
+
+  <div class="container page" id="savedKeysPage">
+    <h1>Saved Keywords</h1>
+    <ul id="savedList" style="padding-left: 20px;"></ul>
+    <div class="btns">
+      <button class="save-all-btn" onclick="saveAllKeywords()">💾 Save All Keywords</button>
+    </div>
+  </div>
+  <script>
+    if (!localStorage.getItem('eliraSavedKeywords')) {
+      localStorage.setItem('eliraSavedKeywords', JSON.stringify([]));
+    }
+
+    let savedKeywords = JSON.parse(localStorage.getItem('eliraSavedKeywords')) || [];
+    window._eliraEncrypted = null;
+    window._eliraDecryptedBase64 = null;
+
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id === "savedKeysPage") showSaved();
+    }
+
+    const ALL_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;':\",.<>/?`~";
+    let baseGrid = [...ALL_CHARS];
+    const GRID_DIMENSION = 10;
+    while (baseGrid.length < GRID_DIMENSION * GRID_DIMENSION) {
+        baseGrid.push('');
+    }
+
+    const column_identity = '0123456789';
+    const row_identity = '0123456789';
+    const gridCache = new Map();
+    
+    function scrambleGrid(keyword) {
+      if (!keyword) return [...baseGrid];
+      if (gridCache.has(keyword)) return gridCache.get(keyword);
+      
+      let filteredKeyword = [...new Set(keyword.split(''))].filter(char => ALL_CHARS.includes(char));
+      let currentGrid = [...baseGrid];
+      for (let char of filteredKeyword) {
+        let index = currentGrid.indexOf(char);
+        if (index !== -1) {
+          currentGrid = currentGrid.slice(index).concat(currentGrid.slice(0, index));
+        }
+        let temp = [];
+        for (let c = 0; c < GRID_DIMENSION; c++) {
+          for (let r = 0; r < GRID_DIMENSION; r++) {
+            temp.push(currentGrid[r * GRID_DIMENSION + c]);
+          }
+        }
+        currentGrid = temp;
+      }
+      gridCache.set(keyword, currentGrid);
+      return currentGrid;
+    }
+
+    function updateGrid(grid) {
+      const gridDiv = document.getElementById("grid");
+      gridDiv.innerHTML = "";
+      grid.forEach(val => {
+        const div = document.createElement("div");
+        div.className = "cell";
+        div.innerText = val === '' ? '' : val;
+        gridDiv.appendChild(div);
+      });
+    }
+
+    function getCharCode(char, grid) {
+      let idx = grid.indexOf(char);
+      if (idx === -1) return '';
+      let row = Math.floor(idx / GRID_DIMENSION);
+      let col = idx % GRID_DIMENSION;
+      return row_identity[row] + column_identity[col];
+    }
+
+    function getCharFromCode(code, grid) {
+      if (code.length !== 2) return '';
+      let row = row_identity.indexOf(code[0]);
+      let col = column_identity.indexOf(code[1]);
+      if (row === -1 || col === -1) return '';
+      return grid[row * GRID_DIMENSION + col];
+    }
+
+    function getSpecialCodes(grid) {
+      let emptyCodes = [];
+      for (let i = 0; i < grid.length; i++) {
+        if (grid[i] === '') {
+          emptyCodes.push(row_identity[Math.floor(i / GRID_DIMENSION)] + column_identity[i % GRID_DIMENSION]);
+        }
+      }
+      // Use the first empty cell for spaces, second for newlines
+      return {
+        space: emptyCodes[0] || '',
+        newline: emptyCodes[1] || emptyCodes[0] || ''
+      };
+    }
+
+    function updateCharCount(id, count) {
+      const element = document.getElementById(id + 'CharCount');
+      if (element) element.innerText = `Characters: ${count}`;
+    }
+
+    async function encrypt() {
+      const keyword = document.getElementById("keyword").value;
+      const input = document.getElementById("input").value;
+      if (!input) return alert("Please enter input text");
+      
+      const grid = scrambleGrid(keyword);
+      updateGrid(grid);
+      const special = getSpecialCodes(grid);
+      let mapped = "";
+      
+      for (let i = 0; i < input.length; i++) {
+        const char = input[i];
+        if (char === ' ') mapped += special.space;
+        else if (char === '\n') mapped += special.newline;
+        else if (baseGrid.includes(char)) mapped += getCharCode(char, grid);
+      }
+      
+      document.getElementById("output").value = mapped;
+      document.getElementById("input").value = ""; 
+      updateCharCount('input', 0);
+      updateCharCount('output', mapped.length);
+    }
+
+    async function decrypt() {
+      const keyword = document.getElementById("keyword").value;
+      const encrypted = document.getElementById("output").value;
+      if (!encrypted) return alert("Please enter encrypted text");
+      
+      const grid = scrambleGrid(keyword);
+      updateGrid(grid);
+      const special = getSpecialCodes(grid);
+      let original = "";
+      
+      for (let i = 0; i < encrypted.length; i += 2) {
+        const code = encrypted.slice(i, i + 2);
+        if (code === special.space) original += " ";
+        else if (code === special.newline) original += "\n";
+        else original += getCharFromCode(code, grid);
+      }
+      
+      document.getElementById("input").value = original;
+      document.getElementById("output").value = ""; 
+      updateCharCount('output', 0);
+      updateCharCount('input', original.length);
+    }
+
+    function encryptUploaded() {
+      const fileInput = document.getElementById('fileInput');
+      const keyword = document.getElementById("keyword").value.trim();
+      if (!fileInput.files.length) return alert("File required.");
+      
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const inputText = e.target.result;
+        const grid = scrambleGrid(keyword);
+        updateGrid(grid);
+        const special = getSpecialCodes(grid);
+        let mapped = "";
+        for (let i = 0; i < inputText.length; i++) {
+          const char = inputText[i];
+          if (char === ' ') mapped += special.space;
+          else if (char === '\n') mapped += special.newline;
+          else if (baseGrid.includes(char)) mapped += getCharCode(char, grid);
+        }
+        document.getElementById("output").value = mapped;
+        document.getElementById("input").value = "";
+        updateCharCount('input', 0);
+        updateCharCount('output', mapped.length);
+      };
+      reader.readAsText(fileInput.files[0]);
+    }
+
+    function decryptUploaded() {
+      const fileInput = document.getElementById('fileInput');
+      const keyword = document.getElementById("keyword").value.trim();
+      if (!fileInput.files.length) return alert("File required.");
+      
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const encrypted = e.target.result;
+        const grid = scrambleGrid(keyword);
+        updateGrid(grid);
+        const special = getSpecialCodes(grid);
+        let original = "";
+        for (let i = 0; i < encrypted.length; i += 2) {
+          const code = encrypted.slice(i, i + 2);
+          if (code === special.space) original += " ";
+          else if (code === special.newline) original += "\n";
+          else original += getCharFromCode(code, grid);
+        }
+        document.getElementById("input").value = original;
+        document.getElementById("output").value = "";
+        updateCharCount('output', 0);
+        updateCharCount('input', original.length);
+      };
+      reader.readAsText(fileInput.files[0]);
+    }
+
+    function copyText(id) {
+      const el = document.getElementById(id);
+      if (el) { el.select(); document.execCommand("copy"); }
+    }
+
+    function saveInput() {
+      const input = document.getElementById("input").value;
+      if (!input) return alert("No input to save!");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([input], { type: "text/plain" }));
+      a.download = "elira_input.txt"; a.click();
+    }
+
+    function saveOutput() {
+      const output = document.getElementById("output").value;
+      if (!output) return alert("No output to save!");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([output], { type: "text/plain" }));
+      a.download = "elira_encrypted_output.txt"; a.click();
+    }
+
+    function saveAllKeywords() {
+      if (savedKeywords.length === 0) return alert("No keywords to save!");
+      let content = "";
+      savedKeywords.forEach(entry => content += `${entry.name}: ${entry.key}\n`);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([content], { type: "text/plain" }));
+      a.download = "elira_all_keywords.txt"; a.click();
+    }
+
+    let keyGenIndex = 0;
+    function getCharset(mode) {
+      if (mode === 'number') return '0123456789';
+      if (mode === 'word') return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      if (mode === 'fullMix') return ALL_CHARS.replace(/ /g, '');
+      return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    }
+
+    function stringToSeed(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) { hash = (hash << 5) - hash + str.charCodeAt(i); hash |= 0; }
+      return hash >>> 0;
+    }
+        
+    function mulberry32(seed) {
+      return function () {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    async function generateKey() {
+      const mode = document.getElementById('mode').value;
+      const length = parseInt(document.getElementById('length').value);
+      const seedText = document.getElementById('seed').value.trim();
+      const targetInput = document.getElementById('targetIndex').value;
+      const target = targetInput ? parseInt(targetInput) : keyGenIndex + 1;
+      const customName = document.getElementById('customName').value.trim();
+      const autoSave = document.getElementById('autoSaveKeys').checked;
+      const charset = getCharset(mode);
+      const rng = mulberry32(stringToSeed(seedText || `${navigator.userAgent}-${new Date().getFullYear()}`));
+      let key = '';
+      for (let i = 0; i < target; i++) {
+        key = '';
+        for (let j = 0; j < length; j++) key += charset.charAt(Math.floor(rng() * charset.length));
+      }
+      document.getElementById('outputKey').value += `#${target}: ${key}\n`;
+      keyGenIndex = target;
+      if (customName && autoSave) {
+        savedKeywords.push({ name: customName, key });
+        localStorage.setItem('eliraSavedKeywords', JSON.stringify(savedKeywords));
+      }
+    }
+
+    function clearOutput() {
+      document.getElementById('outputKey').value = ''; keyGenIndex = 0;
+    }
+
+    function showSaved() {
+      const list = document.getElementById('savedList');
+      list.innerHTML = '';
+      savedKeywords.forEach((entry, idx) => {
+        const li = document.createElement('li');
+        li.className = 'saved-item';
+        li.innerHTML = `<span>${entry.name}: ${entry.key}</span>
+          <div class="btn-group">
+            <button onclick="insertKeyword('${entry.key.replace(/'/g, "\\'")}')">Use</button>
+            <button onclick="deleteSaved(${idx})">Delete</button>
+          </div>`;
+        list.appendChild(li);
+      });
+    }
+
+    function insertKeyword(val) {
+      document.getElementById("keyword").value = val;
+      document.getElementById("keywordInputImage").value = val;
+      showPage("encryptionPage");
+    }
+
+    function deleteSaved(index) {
+      savedKeywords.splice(index, 1);
+      localStorage.setItem('eliraSavedKeywords', JSON.stringify(savedKeywords));
+      showSaved();
+    }
+
+    const gridImage = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".split('');
+    function eliraScramble(text, keyword, mode = 'encrypt') {
+      let result = ''; let keyIndex = 0; keyword = keyword.replace(/[^A-Za-z0-9+/=]/g, '');
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i]; const index = gridImage.indexOf(char); const shift = gridImage.indexOf(keyword[keyIndex % keyword.length]);
+        if (index === -1 || shift === -1) { result += char; continue; }
+        let newIndex = (mode === 'encrypt') ? (index + shift) % gridImage.length : (index - shift + gridImage.length) % gridImage.length;
+        result += gridImage[newIndex]; keyIndex++;
+      }
+      return result;
+    }
+
+    async function encryptImage() {
+      const file = document.getElementById('fileInputImage').files[0];
+      const keyword = document.getElementById('keywordInputImage').value;
+      if (!file || !keyword) return alert("Upload image and enter keyword!");
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const img = new Image(); img.src = e.target.result;
+        await new Promise(r => img.onload = r);
+        const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
+        const base64 = canvas.toDataURL('image/png').split(',')[1];
+        const encrypted = eliraScramble(base64, keyword, 'encrypt');
+        document.getElementById('outputImage').value = encrypted;
+        window._eliraEncrypted = encrypted;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function decryptImage() {
+      const encrypted = document.getElementById('outputImage').value.trim();
+      const keyword = document.getElementById('keywordInputImage').value;
+      if (!encrypted || !keyword) return alert("Enter encrypted text and keyword!");
+      const decrypted = eliraScramble(encrypted, keyword, 'decrypt');
+      window._eliraDecryptedBase64 = decrypted;
+      document.getElementById('imagePreview').src = "data:image/png;base64," + decrypted;
+      document.getElementById('imagePreview').style.display = 'block';
+    }
+
+    function downloadText() {
+      if (!window._eliraEncrypted) return alert("Nothing to download!");
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([window._eliraEncrypted], { type: 'text/plain' }));
+      a.download = "elira_encrypted.txt"; a.click();
+    }
+
+    function downloadImage() {
+      if (!window._eliraDecryptedBase64) return alert("Decrypt an image first!");
+      const a = document.createElement('a'); a.href = "data:image/png;base64," + window._eliraDecryptedBase64;
+      a.download = "decrypted.png"; a.click();
+    }
+
+    function loadTextFile() {
+      const file = document.getElementById('textFileInput').files[0];
+      if (!file) return;
+      const reader = new FileReader(); reader.onload = e => document.getElementById('outputImage').value = e.target.result.trim();
+      reader.readAsText(file);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateGrid(scrambleGrid(''));
+      ['input', 'output'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', () => updateCharCount(id, el.value.length));
+      });
+    });
+  </script>
+</body>
+</html>
